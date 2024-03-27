@@ -1,5 +1,5 @@
 default:
-	make install-deps
+	go mod tidy
 	go build -o myapp main.go
 
 install-deps:

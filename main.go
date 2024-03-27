@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"os"
@@ -11,50 +12,56 @@ import (
 )
 
 func main() {
-	str := readSFromArgs()
+	str, err := readArgs()
+	if err != nil {
+		flag.Usage()
+		os.Exit(1)
+	}
 
-	for _, word := range stemSentence(str) {
+	loadStopWords("stopwords.txt")
+	stemmedSentence, err := stemSentence(str)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	for _, word := range stemmedSentence {
 		fmt.Printf("%s ", word)
 	}
 }
 
-func readSFromArgs() string {
+func readArgs() (string, error) {
 	var str string
-	cliArgs := os.Args
+	flag.StringVar(&str, "s", "", "Sentence to be stemmed")
+	flag.Parse()
 
-	if len(cliArgs) == 3 {
-		if cliArgs[1] == "-s" {
-			str = cliArgs[2]
-		} else {
-			log.Fatal("Wrong key. Please use -s key to specify a sentence")
-		}
-	} else {
-		log.Fatal("Please use -s key only to specify a sentence")
+	if str == "" {
+		return "", fmt.Errorf("Error parsing flags")
 	}
-	return str
+
+	return str, nil
 }
 
-func stemSentence(str string) []string {
-	stopwords.LoadStopWordsFromFile("stopwords.txt", "en", "\n")
-	strWithoutStopwords := stopwords.CleanString(str, "en", true)
-
-	stemmed, _ := snowball.Stem(strWithoutStopwords, "english", true)
-
-	return removeDuplicates(stemmed)
+func loadStopWords(path string) {
+	stopwords.LoadStopWordsFromFile(path, "en", "\n")
 }
 
-func removeDuplicates(str string) []string {
-	words := make(map[string]bool)
-	// i prefer the slice of strings instead of string
-	// because concatenation of strings is too expensive in memory
-	result := make([]string, len(words))
+func stemSentence(str string) ([]string, error) {
+	strWithoutStopwords := stopwords.CleanString(str, "en", false)
 
-	for _, word := range strings.Split(str, " ") {
-		if !words[word] {
-			words[word] = true
-			result = append(result, word)
+	wordFreq := make(map[string]bool)
+	result := make([]string, len(wordFreq))
+
+	words := strings.Fields(strWithoutStopwords)
+	for _, word := range words {
+		stemmedWord, err := snowball.Stem(word, "english", true)
+		if err != nil {
+			return nil, fmt.Errorf("Failed to stem word %s: %v", word, err)
+		}
+		if !wordFreq[stemmedWord] {
+			wordFreq[stemmedWord] = true
+			result = append(result, stemmedWord)
 		}
 	}
 
-	return result
+	return result, nil
 }
