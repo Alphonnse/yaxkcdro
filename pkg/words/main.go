@@ -1,4 +1,4 @@
-package main
+package words 
 
 import (
 	"flag"
@@ -11,23 +11,23 @@ import (
 	"github.com/kljensen/snowball"
 )
 
-func main() {
-	str, err := readArgs()
-	if err != nil {
-		flag.Usage()
-		os.Exit(1)
-	}
-
-	loadStopWords("stopwords.txt")
-	stemmedSentence, err := stemSentence(str)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	for _, word := range stemmedSentence {
-		fmt.Printf("%s ", word)
-	}
-}
+// func main() {
+// 	str, err := readArgs()
+// 	if err != nil {
+// 		flag.Usage()
+// 		os.Exit(1)
+// 	}
+//
+// 	loadStopWords("stopwords.txt")
+// 	stemmedSentence, err := stemSentence(str)
+// 	if err != nil {
+// 		log.Fatal(err)
+// 	}
+//
+// 	for _, word := range stemmedSentence {
+// 		fmt.Printf("%s ", word)
+// 	}
+// }
 
 func readArgs() (string, error) {
 	var str string
