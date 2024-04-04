@@ -1,13 +1,8 @@
 default:
 	go mod tidy
-	go build -o myapp main.go
+	go build -o myapp cmd/yaxkcdro/main.go
 
 install-deps:
 	go get -u github.com/bbalet/stopwords 
 	go get -u github.com/kljensen/snowball 
-
-bench:
-	go test -bench=. -benchmem -benchtime=10s -count=5
-
-test:
-	go test ./...
+	go get -u gopkg.in/yaml.v3
