@@ -1,4 +1,4 @@
-package xkcdClient
+package xkcdModel
 
 type ComicInfo struct {
 	Num        int    `json:"num"`
