@@ -12,7 +12,7 @@ type AppConfig struct {
 	PathStopwords string `yaml:"path_stopwords"`
 }
 
-func GetAppConfig(path string) (AppConfig, error) {
+func NewAppConfig(path string) (AppConfig, error) {
 	configFile, err := os.ReadFile(path)
 	if err != nil {
 		return AppConfig{}, err
@@ -25,4 +25,16 @@ func GetAppConfig(path string) (AppConfig, error) {
 	}
 
 	return config, nil
+}
+
+func (config AppConfig) GetResourceURL() string {
+	return config.ResourceURL
+}
+
+func (config AppConfig) GetPathDB() string {
+	return config.PathDB
+}
+
+func (config AppConfig) GetPathStopwords() string {
+	return config.PathStopwords
 }
