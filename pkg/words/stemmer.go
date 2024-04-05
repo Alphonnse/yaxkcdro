@@ -18,11 +18,6 @@ func NewStemmer(path string) *Stemmer {
 	return &Stemmer{}
 }
 
-// Так как иногда alt может дублироваться внути transcript, я регуляркой
-// вырезаю это (если дублируется, то содержит скобки {{}})
-
-// Да, стеммер умеет пропускать повторяющиеся слова (но при дублировании)
-// в транскрипт содержится название "alt", что будет мешать поиску по комиксам
 func (*Stemmer) Stem(comicsInfo models.ComicInfoGlobal) (*models.ComicInfoGlobal, error) {
 	pattern := `\{\{.*?\}\}`
 	re := regexp.MustCompile(pattern)
