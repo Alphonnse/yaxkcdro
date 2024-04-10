@@ -6,9 +6,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/Alphonnse/yaxkcdro/pkg/database"
-	"github.com/Alphonnse/yaxkcdro/pkg/words"
-	xkcdClient "github.com/Alphonnse/yaxkcdro/pkg/xkcd"
+	"github.com/cheggaaa/pb/v3"
 )
 
 type App struct {
@@ -40,21 +38,21 @@ func (a *App) InitApp() {
 }
 
 func (a *App) RunApp() error {
-	err := downloadComics(a.serviceProvider.stemmerService, a.serviceProvider.xkcdService, a.serviceProvider.databaseService)
+	err := downloadComics(a.serviceProvider)
 	if err != nil {
 		return fmt.Errorf("Error downloading comics: %s\n", err.Error())
 	}
-
-	comicsID, comicsCount, err := readArgs()
-	if err != nil {
-		flag.Usage()
-		return fmt.Errorf("Error reading args: %s\n", err.Error())
-	}
-
-	comicses := a.serviceProvider.databaseService.GetComicsInfo(comicsID, comicsCount)
-	for _, comic := range comicses {
-		fmt.Printf("\nID: %d\nDescription: %s\nImg: %s\n\n", comic.Num, comic.Keywords, comic.Img)
-	}
+	//
+	// comicsID, comicsCount, err := readArgs()
+	// if err != nil {
+	// 	flag.Usage()
+	// 	return fmt.Errorf("Error reading args: %s\n", err.Error())
+	// }
+	//
+	// comicses := a.serviceProvider.databaseService.GetComicsInfo(comicsID, comicsCount)
+	// for _, comic := range comicses {
+	// 	fmt.Printf("\nID: %d\nDescription: %s\nImg: %s\n\n", comic.Num, comic.Keywords, comic.Img)
+	// }
 	return nil
 }
 
@@ -71,50 +69,70 @@ func readArgs() (int, int, error) {
 	return comicsID, comicsCount, nil
 }
 
-func downloadComics(stemmer words.StemmerService, xkcd xkcdClient.XkcsService, database database.DatabaseService) error {
-	comicsCountOnResource, err := xkcd.GetComicsCountOnResource()
+func downloadComics(serviceProvider *serviceProvider) error {
+	log.Println("Reading count of comics on resource...")
+	comicsCountOnResource, err := serviceProvider.xkcdService.GetComicsCountOnResource()
 	if err != nil {
 		return fmt.Errorf("Error counting comics on: %s", err.Error())
 	}
-	lastDownloadedComic, err := database.FindLastDownloadedComic()
-	if err != nil {
-		return fmt.Errorf("Error finding last downloaded comic: %s", err.Error())
-	}
+	log.Printf("Count of comics on resource: %d\n", comicsCountOnResource)
 
-	if comicsCountOnResource == lastDownloadedComic {
+	comicsesInDB := serviceProvider.databaseService.GetInstalledComics()
+	comicsCountInDB := len(comicsesInDB)
+
+	if comicsCountOnResource-1 == comicsCountInDB {
 		fmt.Println("All comics already downloaded")
 		return nil
 	}
 
-	for comicsCountOnResource > lastDownloadedComic {
-		currentComic := lastDownloadedComic + 1
-		fmt.Printf("\rDownloading comic %d/%d", currentComic, comicsCountOnResource)
-
-		comicsInfo, err := xkcd.GetComicsFromResource(lastDownloadedComic)
-		if err != nil {
-			fmt.Println()
-			log.Printf("Error getting comic %d: %s", currentComic, err.Error())
-			lastDownloadedComic++
+	var comicsToInstall []Task
+	for i := 1; i <= comicsCountOnResource; i++ {
+		if i == 404 {
 			continue
 		}
-
-		comicsInfo, err = stemmer.Stem(*comicsInfo)
-		if err != nil {
-			fmt.Println()
-			log.Printf("Error stemming comic %d: %s", currentComic, err.Error())
-			lastDownloadedComic++
-			continue
+		if _, ok := comicsesInDB[i]; !ok {
+			comicsToInstall = append(comicsToInstall, &ComicsInstallerTask{ComicsID: i})
 		}
-
-		err = database.InsertComicsIntoDB(*comicsInfo)
-		if err != nil {
-			fmt.Println()
-			log.Printf("Error inserting comic %d into database: %s", currentComic, err.Error())
-			continue
-		}
-		lastDownloadedComic++
 	}
 
-	fmt.Println("\nAll comics are downloaded")
+	bar := pb.StartNew(len(comicsToInstall))
+	bar.Set("prefix", "Downloading comics")
+	bar.SetMaxWidth(80)
+
+	// Эта функция необходима, без него будет ошибка в БД
+	// почему он не в конструктору? Потому, что в конструкторе я не знаю количество комиксов
+	serviceProvider.databaseService.SetChunkSize(int(float64(comicsCountOnResource-1)*0.05), comicsCountOnResource-1)
+
+	// +1 так как если число меньше 100, то при делении получается 0
+	wp := NewWorkerPool(bar, comicsToInstall, serviceProvider, (len(comicsToInstall)/100)+1)
+	wp.Run()
+
+	fmt.Println("\nAll comics downloaded")
+
 	return nil
+}
+
+type ComicsInstallerTask struct {
+	ComicsID int
+}
+
+func (t *ComicsInstallerTask) Process(serviceProvider *serviceProvider, bar *pb.ProgressBar) {
+	comicsInfo, err := serviceProvider.xkcdService.GetComicsFromResource(t.ComicsID)
+	if err != nil {
+		log.Printf("Error getting comics %d: %s", t.ComicsID, err.Error())
+		return
+	}
+
+	comicsInfo, err = serviceProvider.stemmerService.Stem(*comicsInfo)
+	if err != nil {
+		log.Printf("Error stemming comic %d: %s", t.ComicsID, err.Error())
+		return
+	}
+
+	err = serviceProvider.databaseService.InsertComicsIntoDB(*comicsInfo)
+	if err != nil {
+		log.Printf("Error inserting comic %d into database: %s", t.ComicsID, err.Error())
+		return
+	}
+	bar.Increment()
 }

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"sync"
 
 	"github.com/Alphonnse/yaxkcdro/pkg/database/convertor"
 	dbModel "github.com/Alphonnse/yaxkcdro/pkg/database/models"
@@ -11,8 +12,12 @@ import (
 )
 
 type DatabaseClient struct {
-	pathToDBFile string
-	comicsInfo   map[int]dbModel.DBComicsInfo
+	pathToDBFile          string
+	comicsInfo            map[int]dbModel.DBComicsInfo
+	chunkSize             int
+	counterInsertionCalls int
+	comicsCount           int
+	mu                    sync.RWMutex
 }
 
 func NewDatabaseClient(pathToDBFile string) (*DatabaseClient, error) {
@@ -33,16 +38,17 @@ func NewDatabaseClient(pathToDBFile string) (*DatabaseClient, error) {
 
 	return client, nil
 }
+func (db *DatabaseClient) SetChunkSize(chunkSize int, comicsCount int) {
+	db.chunkSize = chunkSize
+	db.comicsCount = comicsCount
+}
 
-func (db *DatabaseClient) FindLastDownloadedComic() (int, error) {
-	var lastDownloadedComic int
+func (db *DatabaseClient) GetInstalledComics() map[int]bool {
+	mapa := make(map[int]bool, len(db.comicsInfo))
 	for i := range db.comicsInfo {
-		if i > lastDownloadedComic {
-			lastDownloadedComic = i
-		}
+		mapa[i] = true
 	}
-
-	return lastDownloadedComic, nil
+	return mapa
 }
 
 func (db *DatabaseClient) GetComicsInfo(from, count int) []globalModel.ComicInfoToOtput {
@@ -62,16 +68,23 @@ func (db *DatabaseClient) GetComicsInfo(from, count int) []globalModel.ComicInfo
 }
 
 func (db *DatabaseClient) InsertComicsIntoDB(comicsInfo globalModel.ComicInfoGlobal) error {
+	db.counterInsertionCalls++
+	db.mu.Lock()
+	defer db.mu.Unlock()
+
 	db.comicsInfo[comicsInfo.Num] = *convertor.FromGlobalToDBComicsInfo(comicsInfo)
 
-	marshledComics, err := json.MarshalIndent(db.comicsInfo, "", " ")
-	if err != nil {
-		return fmt.Errorf("Error marshaling JSON data: %s", err.Error())
-	}
+	if db.counterInsertionCalls == db.chunkSize || db.comicsCount-len(db.comicsInfo) == 0 {
+		marshledComics, err := json.MarshalIndent(db.comicsInfo, "", "	")
+		if err != nil {
+			return fmt.Errorf("Error marshaling JSON data: %s", err.Error())
+		}
 
-	err = os.WriteFile(db.pathToDBFile, marshledComics, 0644)
-	if err != nil {
-		return fmt.Errorf("Error writing JSON file: %s", err.Error())
+		err = os.WriteFile(db.pathToDBFile, marshledComics, 0644)
+		if err != nil {
+			return fmt.Errorf("Error writing JSON file: %s", err.Error())
+		}
+		db.counterInsertionCalls = 0
 	}
 
 	return nil
