@@ -1,10 +1,9 @@
 package app
 
 import (
-	"errors"
-	"flag"
 	"fmt"
 	"log"
+	"os"
 
 	"github.com/cheggaaa/pb/v3"
 )
@@ -16,7 +15,8 @@ type App struct {
 func NewApp() (*App, error) {
 	a := &App{}
 
-	a.InitDeps("config.yaml")
+	configPath := readArgs()
+	a.InitDeps(configPath)
 
 	return a, nil
 }
@@ -42,31 +42,23 @@ func (a *App) RunApp() error {
 	if err != nil {
 		return fmt.Errorf("Error downloading comics: %s\n", err.Error())
 	}
-	//
-	// comicsID, comicsCount, err := readArgs()
-	// if err != nil {
-	// 	flag.Usage()
-	// 	return fmt.Errorf("Error reading args: %s\n", err.Error())
-	// }
-	//
-	// comicses := a.serviceProvider.databaseService.GetComicsInfo(comicsID, comicsCount)
-	// for _, comic := range comicses {
-	// 	fmt.Printf("\nID: %d\nDescription: %s\nImg: %s\n\n", comic.Num, comic.Keywords, comic.Img)
-	// }
 	return nil
 }
 
-func readArgs() (int, int, error) {
-	var comicsID int
-	var comicsCount int
-	flag.IntVar(&comicsID, "o", 0, "First comic ID")
-	flag.IntVar(&comicsCount, "n", 0, "Count of comics")
-	flag.Parse()
-	if comicsID <= 0 && comicsCount <= 0 {
-		return 0, 0, errors.New("-o and -n should be positive")
-	}
+func readArgs() (string) {
+	var str string
+	cliArgs := os.Args
 
-	return comicsID, comicsCount, nil
+	if len(cliArgs) == 3 {
+		if cliArgs[1] == "-c" {
+			str = cliArgs[2]
+		} else {
+			log.Fatal("Wrong key. Please use -c key to specify the config file")
+		}
+	} else {
+		log.Fatal("Please use -s key only to specify the config file")
+	}
+	return str
 }
 
 func downloadComics(serviceProvider *serviceProvider) error {
