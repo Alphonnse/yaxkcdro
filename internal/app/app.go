@@ -45,7 +45,7 @@ func (a *App) RunApp() error {
 	return nil
 }
 
-func readArgs() (string) {
+func readArgs() string {
 	var str string
 	cliArgs := os.Args
 

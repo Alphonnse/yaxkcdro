@@ -21,7 +21,7 @@ type XkcdClient struct {
 func NewXkcdClient(resourceURL string) *XkcdClient {
 	return &XkcdClient{
 		resourceURL: resourceURL,
-		client:      http.Client{Timeout: 8 * time.Second},
+		client:      http.Client{Timeout: 5 * time.Second},
 	}
 }
 
@@ -47,91 +47,96 @@ func (c *XkcdClient) GetComicsFromResource(comicNumber int) (*models.ComicInfoGl
 }
 
 func (c *XkcdClient) GetComicsCountOnResource() (int, error) {
-	count, needToRewrite, err := comicsCountTemp(false, 0)
+	count, err := comicsCountTemp(false, 0)
 	if err != nil {
-		return 0, fmt.Errorf("Error getting comics count, %s", err.Error())
+		return 0, fmt.Errorf("Error getting comics count: %s", err.Error())
 	}
-	if needToRewrite {
-		i := 1
-		indent := 1000
-		prev := 0
-		var resp *http.Response
-		for {
-			if prev == i {
-				break
-			}
-			resp, err = c.client.Get(fmt.Sprintf("%s/%d/info.0.json", c.resourceURL, i))
-			if err != nil {
-				return 0, fmt.Errorf("Error getting comics count on %s: %s", c.resourceURL, err.Error())
-			}
 
-			prev = i
-			if resp.StatusCode == http.StatusNotFound {
-				i -= indent
-				indent /= 2
-			}
+	if count > 0 {
+		return count, nil
+	}
 
+	i := 1
+	indent := 1000
+	var resp *http.Response
+	for {
+		resp, err = c.client.Get(fmt.Sprintf("%s/%d/info.0.json", c.resourceURL, i))
+		if err != nil {
+			return 0, fmt.Errorf("Error getting comics count on %s: %s", c.resourceURL, err.Error())
+		}
+		defer resp.Body.Close() 
+
+		if resp.StatusCode == http.StatusNotFound {
+			i -= indent
+			indent /= 2
+		} else {
 			i += indent
 		}
-		if resp != nil {
-			resp.Body.Close()
-		}
 
-		count = i
-
-		_, _, err = comicsCountTemp(true, count)
-		if err != nil {
-			return 0, fmt.Errorf("Error writing comics count, %s", err.Error())
+		if indent == 0 {
+			break
 		}
 	}
+
+	count = i
+
+	if count > 0 {
+		_, err = comicsCountTemp(true, count)
+		if err != nil {
+			return 0, fmt.Errorf("Error writing comics count: %s", err.Error())
+		}
+	}
+
 	return count, nil
 }
 
-type countInTmp struct {
+type ComicsCountData struct {
 	LastRequest time.Time `yaml:"lastRequest"`
 	Count       int       `yaml:"count"`
 }
 
-func comicsCountTemp(shouldBeRewrited bool, newCount int) (CountToRewrite int, shouldBeRewriten bool, err error) {
+func comicsCountTemp(shouldUpdate bool, newCount int) (int, error) {
 	path := ".tmp.yaml"
-	var count int
+	var data ComicsCountData
 
-	if !shouldBeRewrited {
+	if !shouldUpdate {
 		_, err := os.Stat(path)
-		if err != nil {
-			return 0, true, nil
-		}
-		if os.IsNotExist(err) {
-			return 0, true, nil
+		if err != nil && os.IsNotExist(err) {
+			return 0, nil 
 		}
 
 		configFile, err := os.ReadFile(path)
 		if err != nil {
-			return 0, false, err
+			return 0, err
 		}
 
-		var readenConunt countInTmp
-		err = yaml.Unmarshal(configFile, &readenConunt)
+		err = yaml.Unmarshal(configFile, &data)
 		if err != nil {
-			return 0, false, err
+			return 0, err
 		}
-		if time.Now().Sub(readenConunt.LastRequest) > time.Hour*4 {
-			return 0, true, nil
+
+		if time.Since(data.LastRequest) > time.Hour*4 {
+			return 0, nil 
 		}
-		count = readenConunt.Count
-	} else {
-		countToWrite := countInTmp{
-			LastRequest: time.Now(),
-			Count:       newCount,
-		}
-		updated, err := yaml.Marshal(&countToWrite)
-		if err != nil {
-			return 0, false, err
-		}
-		err = os.WriteFile(path, updated, 0644)
-		if err != nil {
-			return 0, false, err
-		}
+
+		return data.Count, nil
 	}
-	return count, false, nil
+
+	// Update the count data and write it to the file.
+	data = ComicsCountData{
+		LastRequest: time.Now(),
+		Count:       newCount,
+	}
+
+	updatedData, err := yaml.Marshal(&data)
+	if err != nil {
+		return 0, err
+	}
+
+	err = os.WriteFile(path, updatedData, 0644)
+	if err != nil {
+		return 0, err
+	}
+
+	return data.Count, nil
 }
