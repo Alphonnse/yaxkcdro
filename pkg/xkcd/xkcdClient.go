@@ -29,48 +29,48 @@ func (c *XkcdClient) GetComicsFromResource(comicNumber int) (*models.ComicInfoGl
 
 	resp, err := c.client.Get(fmt.Sprintf("%s/%d/info.0.json", c.resourceURL, comicNumber))
 	if err != nil {
-		return nil, fmt.Errorf("Error getting comic %d from %s: %s", comicNumber, c.resourceURL, err.Error())
+		return nil, fmt.Errorf("can not get comic %d from %s: %s", comicNumber, c.resourceURL, err.Error())
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("Got status %d for comics %d", resp.StatusCode, comicNumber)
+		return nil, fmt.Errorf("got status %d for comics %d", resp.StatusCode, comicNumber)
 	}
 
 	var comicInfo xkcdModel.ComicInfo
 	err = json.NewDecoder(resp.Body).Decode(&comicInfo)
 	if err != nil {
-		return nil, fmt.Errorf("Error parsing comic %d from %s: %s", comicNumber, c.resourceURL, err.Error())
+		return nil, fmt.Errorf("can not parse comic %d from %s: %s", comicNumber, c.resourceURL, err.Error())
 	}
 
 	return convertor.FromXkcdClientToGlobal(comicInfo), nil
 }
 
 func (c *XkcdClient) GetComicsCountOnResource() (int, error) {
-	count, err := comicsCountTemp(false, 0)
+	count, err := readComicsCount()
 	if err != nil {
-		return 0, fmt.Errorf("Error getting comics count: %s", err.Error())
+		return 0, fmt.Errorf("can not get comics count: %s", err.Error())
 	}
 
 	if count > 0 {
 		return count, nil
 	}
 
-	i := 1
+	count = 1
 	indent := 1000
 	var resp *http.Response
 	for {
-		resp, err = c.client.Get(fmt.Sprintf("%s/%d/info.0.json", c.resourceURL, i))
+		resp, err = c.client.Head(fmt.Sprintf("%s/%d/info.0.json", c.resourceURL, count))
 		if err != nil {
-			return 0, fmt.Errorf("Error getting comics count on %s: %s", c.resourceURL, err.Error())
+			return 0, fmt.Errorf("can not get comics count on %s: %s", c.resourceURL, err.Error())
 		}
-		defer resp.Body.Close() 
+		defer resp.Body.Close()
 
 		if resp.StatusCode == http.StatusNotFound {
-			i -= indent
+			count -= indent
 			indent /= 2
 		} else {
-			i += indent
+			count += indent
 		}
 
 		if indent == 0 {
@@ -78,12 +78,10 @@ func (c *XkcdClient) GetComicsCountOnResource() (int, error) {
 		}
 	}
 
-	count = i
-
 	if count > 0 {
-		_, err = comicsCountTemp(true, count)
+		err = writeComicsCount(count)
 		if err != nil {
-			return 0, fmt.Errorf("Error writing comics count: %s", err.Error())
+			return 0, fmt.Errorf("can not write comics count: %s", err.Error())
 		}
 	}
 
@@ -95,34 +93,36 @@ type ComicsCountData struct {
 	Count       int       `yaml:"count"`
 }
 
-func comicsCountTemp(shouldUpdate bool, newCount int) (int, error) {
-	path := ".tmp.yaml"
+const path = ".tmp.yaml"
+
+func readComicsCount() (int, error) {
 	var data ComicsCountData
 
-	if !shouldUpdate {
-		_, err := os.Stat(path)
-		if err != nil && os.IsNotExist(err) {
-			return 0, nil 
-		}
-
-		configFile, err := os.ReadFile(path)
-		if err != nil {
-			return 0, err
-		}
-
-		err = yaml.Unmarshal(configFile, &data)
-		if err != nil {
-			return 0, err
-		}
-
-		if time.Since(data.LastRequest) > time.Hour*4 {
-			return 0, nil 
-		}
-
-		return data.Count, nil
+	_, err := os.Stat(path)
+	if err != nil && os.IsNotExist(err) {
+		return 0, nil
 	}
 
-	// Update the count data and write it to the file.
+	configFile, err := os.ReadFile(path)
+	if err != nil {
+		return 0, err
+	}
+
+	err = yaml.Unmarshal(configFile, &data)
+	if err != nil {
+		return 0, err
+	}
+
+	if time.Since(data.LastRequest) > time.Hour*4 {
+		return 0, nil
+	}
+
+	return data.Count, nil
+}
+
+func writeComicsCount(newCount int) error {
+	var data ComicsCountData
+
 	data = ComicsCountData{
 		LastRequest: time.Now(),
 		Count:       newCount,
@@ -130,13 +130,13 @@ func comicsCountTemp(shouldUpdate bool, newCount int) (int, error) {
 
 	updatedData, err := yaml.Marshal(&data)
 	if err != nil {
-		return 0, err
+		return err
 	}
 
 	err = os.WriteFile(path, updatedData, 0644)
 	if err != nil {
-		return 0, err
+		return err
 	}
 
-	return data.Count, nil
+	return nil
 }

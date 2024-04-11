@@ -27,7 +27,7 @@ func (*Stemmer) Stem(comicsInfo models.ComicInfoGlobal) (*models.ComicInfoGlobal
 
 	stemmedSentence, err := stemSentence(wholeSentence)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to stem sentence: %s", err.Error())
+		return nil, fmt.Errorf("failed to stem sentence: %s", err.Error())
 	}
 
 	comicsInfo.Keywords = stemmedSentence
@@ -44,7 +44,7 @@ func stemSentence(str string) ([]string, error) {
 	for _, word := range words {
 		stemmedWord, err := snowball.Stem(word, "english", true)
 		if err != nil {
-			return nil, fmt.Errorf("Failed to stem word %s: %s", word, err.Error())
+			return nil, fmt.Errorf("failed to stem word %s: %s", word, err.Error())
 		}
 		if !wordFreq[stemmedWord] {
 			wordFreq[stemmedWord] = true

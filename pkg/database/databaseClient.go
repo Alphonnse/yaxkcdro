@@ -33,25 +33,25 @@ func NewDatabaseClient(pathToDBFile string) (*DatabaseClient, error) {
 			log.Println("Database file not found, creating new one")
 			file, err := os.Create(pathToDBFile)
 			if err != nil {
-				return nil, fmt.Errorf("Error creating database JSON file: %s", err.Error())
+				return nil, fmt.Errorf("can not create database JSON file: %s", err.Error())
 			}
 			_, err = file.Write([]byte("{}"))
 			if err != nil {
-				return nil, fmt.Errorf("Error creating database JSON file: %s", err.Error())
+				return nil, fmt.Errorf("can not create database JSON file: %s", err.Error())
 			}
 		} else {
-			return nil, fmt.Errorf("Error reading database JSON file: %s", err.Error())
+			return nil, fmt.Errorf("can not read database JSON file: %s", err.Error())
 		}
 	}
 
 	data, err := os.ReadFile(pathToDBFile)
 	if err != nil {
-		return nil, fmt.Errorf("Error reading database JSON file: %s", err.Error())
+		return nil, fmt.Errorf("can not read database JSON file: %s", err.Error())
 	}
 
 	err = json.Unmarshal(data, &client.comicsInfo)
 	if err != nil {
-		return nil, fmt.Errorf("Error unmarshaling JSON data: %v", err.Error())
+		return nil, fmt.Errorf("can not unmarshall JSON data (blank json should contain {}): %v", err.Error())
 	}
 
 	return client, nil
@@ -79,12 +79,12 @@ func (db *DatabaseClient) InsertComicsIntoDB(comicsInfo globalModel.ComicInfoGlo
 	if db.counterInsertionCalls == db.chunkSize || db.comicsCount-len(db.comicsInfo) == 0 {
 		marshledComics, err := json.MarshalIndent(db.comicsInfo, "", "	")
 		if err != nil {
-			return fmt.Errorf("Error marshaling JSON data: %s", err.Error())
+			return fmt.Errorf("can not marshall JSON data: %s", err.Error())
 		}
 
 		err = os.WriteFile(db.pathToDBFile, marshledComics, 0644)
 		if err != nil {
-			return fmt.Errorf("Error writing JSON file: %s", err.Error())
+			return fmt.Errorf("can not write JSON file: %s", err.Error())
 		}
 		db.counterInsertionCalls = 0
 	}

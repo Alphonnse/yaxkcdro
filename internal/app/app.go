@@ -72,10 +72,16 @@ func downloadComics(serviceProvider *serviceProvider) error {
 	comicsesInDB := serviceProvider.databaseService.GetInstalledComics()
 	comicsCountInDB := len(comicsesInDB)
 
+	log.Printf("Count of installed comics in DB (ex.404): %d\n", comicsCountInDB)
+
 	if comicsCountOnResource-1 == comicsCountInDB {
 		fmt.Println("All comics already downloaded")
 		return nil
 	}
+
+	bar := pb.StartNew(comicsCountOnResource - comicsCountInDB)
+	bar.Set("prefix", "Downloading comics")
+	bar.SetMaxWidth(80)
 
 	var comicsToInstall []Task
 	for i := 1; i <= comicsCountOnResource; i++ {
@@ -83,13 +89,13 @@ func downloadComics(serviceProvider *serviceProvider) error {
 			continue
 		}
 		if _, ok := comicsesInDB[i]; !ok {
-			comicsToInstall = append(comicsToInstall, &ComicsInstallerTask{ComicsID: i})
+			comicsToInstall = append(comicsToInstall, &ComicsInstallerTask{
+				ComicsID:        i,
+				serviceProvider: serviceProvider,
+				bar:             bar,
+			})
 		}
 	}
-
-	bar := pb.StartNew(len(comicsToInstall))
-	bar.Set("prefix", "Downloading comics")
-	bar.SetMaxWidth(80)
 
 	// Эта функция необходима, без него будет ошибка в БД
 	// почему он не в конструктору? Потому, что в конструкторе я не знаю количество комиксов
@@ -105,26 +111,28 @@ func downloadComics(serviceProvider *serviceProvider) error {
 }
 
 type ComicsInstallerTask struct {
-	ComicsID int
+	ComicsID        int
+	serviceProvider *serviceProvider
+	bar             *pb.ProgressBar
 }
 
-func (t *ComicsInstallerTask) Process(serviceProvider *serviceProvider, bar *pb.ProgressBar) {
-	comicsInfo, err := serviceProvider.xkcdService.GetComicsFromResource(t.ComicsID)
+func (t *ComicsInstallerTask) Process() {
+	comicsInfo, err := t.serviceProvider.xkcdService.GetComicsFromResource(t.ComicsID)
 	if err != nil {
 		log.Printf("Error getting comics %d: %s", t.ComicsID, err.Error())
 		return
 	}
 
-	comicsInfo, err = serviceProvider.stemmerService.Stem(*comicsInfo)
+	comicsInfo, err = t.serviceProvider.stemmerService.Stem(*comicsInfo)
 	if err != nil {
 		log.Printf("Error stemming comic %d: %s", t.ComicsID, err.Error())
 		return
 	}
 
-	err = serviceProvider.databaseService.InsertComicsIntoDB(*comicsInfo)
+	err = t.serviceProvider.databaseService.InsertComicsIntoDB(*comicsInfo)
 	if err != nil {
 		log.Printf("Error inserting comic %d into database: %s", t.ComicsID, err.Error())
 		return
 	}
-	bar.Increment()
+	t.bar.Increment()
 }
