@@ -56,6 +56,7 @@ func NewDatabaseClient(pathToDBFile string) (*DatabaseClient, error) {
 
 	return client, nil
 }
+
 func (db *DatabaseClient) SetChunkSize(chunkSize int, comicsCount int) {
 	db.chunkSize = chunkSize
 	db.comicsCount = comicsCount
