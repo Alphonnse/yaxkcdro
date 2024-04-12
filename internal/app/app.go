@@ -56,7 +56,7 @@ func readArgs() string {
 			log.Fatal("Wrong key. Please use -c key to specify the config file")
 		}
 	} else {
-		log.Fatal("Please use -s key only to specify the config file")
+		log.Fatal("Please use -c key only to specify the config file")
 	}
 	return str
 }

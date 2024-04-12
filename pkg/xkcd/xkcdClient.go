@@ -59,6 +59,7 @@ func (c *XkcdClient) GetComicsCountOnResource() (int, error) {
 	count = 1
 	indent := 1000
 	var resp *http.Response
+	var attempt int
 	for {
 		resp, err = c.client.Head(fmt.Sprintf("%s/%d/info.0.json", c.resourceURL, count))
 		if err != nil {
@@ -66,9 +67,13 @@ func (c *XkcdClient) GetComicsCountOnResource() (int, error) {
 		}
 		defer resp.Body.Close()
 
-		if resp.StatusCode == http.StatusNotFound {
-			count -= indent
+		if resp.StatusCode == http.StatusNotFound && attempt < 2{
+			attempt++
+			count += indent
+		} else if resp.StatusCode == http.StatusNotFound && attempt >= 2 {
+			count -= 3*indent
 			indent /= 2
+			attempt = 0
 		} else {
 			count += indent
 		}
