@@ -1,9 +1,14 @@
 package database
 
-import globalModel "github.com/Alphonnse/yaxkcdro/pkg/models"
+import (
+	globalModel "github.com/Alphonnse/yaxkcdro/pkg/models"
+	dbModel "github.com/Alphonnse/yaxkcdro/pkg/database/models"
+)
 
 type DatabaseService interface {
 	SetChunkSize(chunkSize int, comicsCount int)
-	GetInstalledComics() map[int]bool
-	InsertComicsIntoDB(comicsInfo globalModel.ComicInfoGlobal) error
+	GetWhatComicsAreInstalled() map[int]bool
+	readFile(index bool, pathToFile string) error
+	InsertComicsIntoFiles(comicsInfo globalModel.ComicInfoGlobal) error
+	processIndex(comicsID int, comics *dbModel.DBComicsInfo)
 }

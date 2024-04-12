@@ -53,7 +53,7 @@ func (s *serviceProvider) XkcdService() xkcdClient.XkcsService {
 
 func (s *serviceProvider) DatabaseService() database.DatabaseService {
 	if s.databaseService == nil {
-		database, err := database.NewDatabaseClient(s.configService.GetPathDB())
+		database, err := database.NewDatabaseClient(s.configService.GetPathDB(), s.configService.GetPathIndex())
 		if err != nil {
 			log.Fatalf("Field creating database client: %s", err.Error())
 		}

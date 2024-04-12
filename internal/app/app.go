@@ -56,7 +56,7 @@ func readArgs() string {
 			log.Fatal("Wrong key. Please use -c key to specify the config file")
 		}
 	} else {
-		log.Fatal("Please use -s key only to specify the config file")
+		log.Fatal("Please use -c key only to specify the config file")
 	}
 	return str
 }
@@ -69,7 +69,7 @@ func downloadComics(serviceProvider *serviceProvider) error {
 	}
 	log.Printf("Count of comics on resource: %d\n", comicsCountOnResource)
 
-	comicsesInDB := serviceProvider.databaseService.GetInstalledComics()
+	comicsesInDB := serviceProvider.databaseService.GetWhatComicsAreInstalled()
 	comicsCountInDB := len(comicsesInDB)
 
 	log.Printf("Count of installed comics in DB (ex.404): %d\n", comicsCountInDB)
@@ -97,15 +97,12 @@ func downloadComics(serviceProvider *serviceProvider) error {
 		}
 	}
 
-	// Эта функция необходима, без него будет ошибка в БД
-	// почему он не в конструктору? Потому, что в конструкторе я не знаю количество комиксов
 	serviceProvider.databaseService.SetChunkSize(int(float64(comicsCountOnResource-1)*0.05), comicsCountOnResource-1)
 
-	// +1 так как если число меньше 100, то при делении получается 0
 	wp := NewWorkerPool(bar, comicsToInstall, serviceProvider, (len(comicsToInstall)/100)+1)
 	wp.Run()
 
-	fmt.Println("\nAll comics downloaded")
+	fmt.Println("\nAll comics now downloaded")
 
 	return nil
 }
@@ -123,13 +120,14 @@ func (t *ComicsInstallerTask) Process() {
 		return
 	}
 
-	comicsInfo, err = t.serviceProvider.stemmerService.Stem(*comicsInfo)
+	keywords, err := t.serviceProvider.stemmerService.StemComicsDesc(comicsInfo.Transcript, comicsInfo.Alt)
 	if err != nil {
 		log.Printf("Error stemming comic %d: %s", t.ComicsID, err.Error())
 		return
 	}
+	comicsInfo.Keywords = keywords
 
-	err = t.serviceProvider.databaseService.InsertComicsIntoDB(*comicsInfo)
+	err = t.serviceProvider.databaseService.InsertComicsIntoFiles(*comicsInfo)
 	if err != nil {
 		log.Printf("Error inserting comic %d into database: %s", t.ComicsID, err.Error())
 		return
