@@ -7,9 +7,6 @@ import (
 )
 
 func main(){
-	// myapp := app.NewApp()
-	// myapp.RunApp()
-
 	a, err := app.NewApp()
 	if err != nil {
 		log.Fatalf("failed to init app: %s", err.Error())
