@@ -1,8 +1,8 @@
 package database
 
 import (
-	globalModel "github.com/Alphonnse/yaxkcdro/pkg/models"
 	dbModel "github.com/Alphonnse/yaxkcdro/pkg/database/models"
+	globalModel "github.com/Alphonnse/yaxkcdro/pkg/models"
 )
 
 type DatabaseService interface {
@@ -11,4 +11,6 @@ type DatabaseService interface {
 	readFile(index bool, pathToFile string) error
 	InsertComicsIntoFiles(comicsInfo globalModel.ComicInfoGlobal) error
 	processIndex(comicsID int, comics *dbModel.DBComicsInfo)
+	FindComicsByStringUsingIndex(queryWords []globalModel.StemmedWord) []globalModel.ComicInfoToOtput
+	FindComicsByStringNotUsingIndex(queryWords []globalModel.StemmedWord) []globalModel.ComicInfoToOtput
 }

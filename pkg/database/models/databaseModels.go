@@ -15,3 +15,8 @@ type IndexModel struct {
 	Weight   int `json:"weight"`
 }
 
+type OutputProcessModel struct {
+	Num    int
+	Weight int
+	Word   string
+}

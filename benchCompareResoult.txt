@@ -1,0 +1,15 @@
+goos: linux
+goarch: amd64
+pkg: github.com/Alphonnse/yaxkcdro/pkg/database
+cpu: AMD Ryzen 7 4800H with Radeon Graphics         
+                                   │ benchWithIndex.txt │         benchWithoutIndex.txt          │
+                                   │       sec/op       │    sec/op      vs base                 │
+FindComicsByStringNotUsingIndex-16         34.32µ ± 11%   1407.01µ ± 4%  +3999.90% (p=0.002 n=6)
+
+                                   │ benchWithIndex.txt │        benchWithoutIndex.txt         │
+                                   │        B/op        │     B/op      vs base                │
+FindComicsByStringNotUsingIndex-16         15.79Ki ± 1%   47.18Ki ± 4%  +198.69% (p=0.002 n=6)
+
+                                   │ benchWithIndex.txt │        benchWithoutIndex.txt        │
+                                   │     allocs/op      │  allocs/op   vs base                │
+FindComicsByStringNotUsingIndex-16           37.00 ± 3%   273.50 ± 5%  +639.19% (p=0.002 n=6)

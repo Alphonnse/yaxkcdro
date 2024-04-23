@@ -1,0 +1,12 @@
+goos: linux
+goarch: amd64
+pkg: github.com/Alphonnse/yaxkcdro/pkg/database
+cpu: AMD Ryzen 7 4800H with Radeon Graphics         
+BenchmarkFindComicsByStringNotUsingIndex-16    	   32972	     31328 ns/op	   16164 B/op	      37 allocs/op
+BenchmarkFindComicsByStringNotUsingIndex-16    	   33578	     30583 ns/op	   16150 B/op	      37 allocs/op
+BenchmarkFindComicsByStringNotUsingIndex-16    	   29118	     35719 ns/op	   16266 B/op	      38 allocs/op
+BenchmarkFindComicsByStringNotUsingIndex-16    	   29947	     33393 ns/op	   16241 B/op	      38 allocs/op
+BenchmarkFindComicsByStringNotUsingIndex-16    	   32140	     35418 ns/op	   16184 B/op	      37 allocs/op
+BenchmarkFindComicsByStringNotUsingIndex-16    	   38881	     35243 ns/op	   16046 B/op	      36 allocs/op
+PASS
+ok  	github.com/Alphonnse/yaxkcdro/pkg/database	20.213s

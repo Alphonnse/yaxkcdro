@@ -20,23 +20,16 @@ func NewStemmer(path string) *Stemmer {
 	return &Stemmer{}
 }
 
-// func (*Stemmer) Stem(comicsInfo models.ComicInfoGlobal) (*models.ComicInfoGlobal, error) {
-// 	pattern := `\{\{.*?\}\}`
-// 	re := regexp.MustCompile(pattern)
-// 	comicsInfo.Transcript = re.ReplaceAllString(comicsInfo.Transcript, "")
-//
-// 	wholeSentence := fmt.Sprintf("%s %s", comicsInfo.Alt, comicsInfo.Transcript)
-//
-// 	stemmedSentence, err := stemSentence(wholeSentence)
-// 	if err != nil {
-// 		return nil, fmt.Errorf("failed to stem sentence: %s", err.Error())
-// 	}
-//
-// 	comicsInfo.Keywords = stemmedSentence
-// 	return &comicsInfo, nil
-// }
+func (*Stemmer) StemQueryText(text string) ([]models.StemmedWord, error) {
+	stemmedSentence, err := stemSentence(text)
+	if err != nil {
+		return nil, fmt.Errorf("failed to stem sentence: %s", err.Error())
+	}
 
-func (*Stemmer) StemComicsDesc(transcript, alt string) ([]models.Keyword, error) {
+	return convertor.FromStemmerToGlobalKeywords(stemmedSentence), nil
+}
+
+func (*Stemmer) StemComicsDesc(transcript, alt string) ([]models.StemmedWord, error) {
 	pattern := `\{\{.*?\}\}`
 	re := regexp.MustCompile(pattern)
 	transcript = re.ReplaceAllString(transcript, "")
@@ -81,20 +74,3 @@ func stemSentence(str string) ([]stemmerModel.StemmedWord, error) {
 
 	return stemmedWords, nil
 }
-
-// func stemSentence(str string) ([]string, error) {
-// 	strWithoutStopwords := stopwords.CleanString(str, "en", false)
-//
-// 	words := strings.Fields(strWithoutStopwords)
-// 	result := make([]string, len(words))
-//
-// 	for _, word := range words {
-// 		stemmedWord, err := snowball.Stem(word, "english", true)
-// 		if err != nil {
-// 			return nil, fmt.Errorf("failed to stem word %s: %s", word, err.Error())
-// 		}
-// 		result = append(result, stemmedWord)
-// 	}
-//
-// 	return result, nil
-// }

@@ -15,7 +15,7 @@ type App struct {
 func NewApp() (*App, error) {
 	a := &App{}
 
-	configPath := readArgs()
+	configPath := "config.yaml"
 	a.InitDeps(configPath)
 
 	return a, nil
@@ -38,27 +38,53 @@ func (a *App) InitApp() {
 }
 
 func (a *App) RunApp() error {
-	err := downloadComics(a.serviceProvider)
+
+	searchString, searchByIndex := readArgs()
+
+	stemmedSearchString, err := a.serviceProvider.stemmerService.StemQueryText(searchString)
+	if err != nil {
+		return fmt.Errorf("Error stemming text: %s\n", err.Error())
+	}
+
+	err = downloadComics(a.serviceProvider)
 	if err != nil {
 		return fmt.Errorf("Error downloading comics: %s\n", err.Error())
 	}
+
+	if searchByIndex {
+		for _, coimcs := range a.serviceProvider.databaseService.FindComicsByStringUsingIndex(stemmedSearchString) {
+			fmt.Println(coimcs.Img, coimcs.Num)
+		}
+		return nil
+	}
+	for _, coimcs := range a.serviceProvider.databaseService.FindComicsByStringNotUsingIndex(stemmedSearchString) {
+		fmt.Println(coimcs.Img, coimcs.Num)
+	}
+
 	return nil
 }
 
-func readArgs() string {
+func readArgs() (string, bool) {
 	var str string
 	cliArgs := os.Args
 
 	if len(cliArgs) == 3 {
-		if cliArgs[1] == "-c" {
-			str = cliArgs[2]
+		if cliArgs[1] == "-s" {
+			return cliArgs[2], false
 		} else {
-			log.Fatal("Wrong key. Please use -c key to specify the config file")
+			log.Fatal("Wrong key. Please use -s key to specify a sentence, and -i to search using index ")
+		}
+	} else if len(cliArgs) == 4 {
+		if cliArgs[1] == "-s" && cliArgs[3] == "-i" {
+			return cliArgs[2], true
+		} else {
+			log.Fatal("Wrong key. Please use -s key to specify a sentence, and -i to search using index ")
 		}
 	} else {
-		log.Fatal("Please use -c key only to specify the config file")
+		log.Fatal("Please use -s key to specify a sentence, and -i to search using index")
 	}
-	return str
+
+	return str, false
 }
 
 func downloadComics(serviceProvider *serviceProvider) error {
