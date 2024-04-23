@@ -224,7 +224,7 @@ func (db *DatabaseClient) ranking(queryWords []globalModel.StemmedWord, suitable
 	for i := 1; i < len(suitableWords); i++ {
 		for j := 0; j < len(suitableWords[i]); j++ {
 			for _, word := range master {
-				if suitableWords[i][j].Num == word.Num {
+				if suitableWords[i][j].Num == word.Num && !bitmap[suitableWords[i][j].Num] {
 					res = append(res, suitableWords[i][j])
 					bitmap[suitableWords[i][j].Num] = true
 				}

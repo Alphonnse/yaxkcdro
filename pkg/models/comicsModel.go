@@ -2,6 +2,7 @@ package models
 
 type ComicInfoGlobal struct {
 	Num        int           `json:"num"`
+	SafeTitle  string        `json:"safe_title"`
 	Transcript string        `json:"transcript"`
 	Alt        string        `json:"alt"`
 	Keywords   []StemmedWord `json:"words"`
@@ -9,8 +10,8 @@ type ComicInfoGlobal struct {
 }
 
 type ComicInfoToOtput struct {
-	Num      int      `json:"num"`
-	Img      string   `json:"img"`
+	Num int    `json:"num"`
+	Img string `json:"img"`
 }
 
 type StemmedWord struct {

@@ -146,7 +146,7 @@ func (t *ComicsInstallerTask) Process() {
 		return
 	}
 
-	keywords, err := t.serviceProvider.stemmerService.StemComicsDesc(comicsInfo.Transcript, comicsInfo.Alt)
+	keywords, err := t.serviceProvider.stemmerService.StemComicsDesc(comicsInfo.SafeTitle, comicsInfo.Transcript, comicsInfo.Alt)
 	if err != nil {
 		log.Printf("Error stemming comic %d: %s", t.ComicsID, err.Error())
 		return

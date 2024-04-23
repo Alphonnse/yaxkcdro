@@ -29,12 +29,12 @@ func (*Stemmer) StemQueryText(text string) ([]models.StemmedWord, error) {
 	return convertor.FromStemmerToGlobalKeywords(stemmedSentence), nil
 }
 
-func (*Stemmer) StemComicsDesc(transcript, alt string) ([]models.StemmedWord, error) {
+func (*Stemmer) StemComicsDesc(title, transcript, alt string) ([]models.StemmedWord, error) {
 	pattern := `\{\{.*?\}\}`
 	re := regexp.MustCompile(pattern)
 	transcript = re.ReplaceAllString(transcript, "")
 
-	wholeSentence := fmt.Sprintf("%s %s", alt, transcript)
+	wholeSentence := fmt.Sprintf("%s %s %s", title, alt, transcript)
 
 	stemmedSentence, err := stemSentence(wholeSentence)
 	if err != nil {
