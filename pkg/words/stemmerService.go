@@ -3,5 +3,6 @@ package words
 import "github.com/Alphonnse/yaxkcdro/pkg/models"
 
 type StemmerService interface {
-	Stem(comicsInfo models.ComicInfoGlobal) (*models.ComicInfoGlobal, error)
+	StemQueryText(text string) ([]models.StemmedWord, error)
+	StemComicsDesc(title, transcript, alt string) ([]models.StemmedWord, error)
 }

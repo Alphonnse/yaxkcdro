@@ -9,6 +9,7 @@ import (
 type AppConfig struct {
 	ResourceURL   string `yaml:"resource_url"`
 	PathDB        string `yaml:"path_db"`
+	PathIndex     string `yaml:"path_index"`
 	PathStopwords string `yaml:"path_stopwords"`
 }
 
@@ -33,6 +34,10 @@ func (config AppConfig) GetResourceURL() string {
 
 func (config AppConfig) GetPathDB() string {
 	return config.PathDB
+}
+
+func (config AppConfig) GetPathIndex() string {
+	return config.PathIndex
 }
 
 func (config AppConfig) GetPathStopwords() string {

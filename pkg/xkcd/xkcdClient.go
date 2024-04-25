@@ -67,11 +67,11 @@ func (c *XkcdClient) GetComicsCountOnResource() (int, error) {
 		}
 		defer resp.Body.Close()
 
-		if resp.StatusCode == http.StatusNotFound && attempt < 2{
+		if resp.StatusCode == http.StatusNotFound && attempt < 2 {
 			attempt++
 			count += indent
 		} else if resp.StatusCode == http.StatusNotFound && attempt >= 2 {
-			count -= 3*indent
+			count -= 3 * indent
 			indent /= 2
 			attempt = 0
 		} else {
@@ -126,9 +126,7 @@ func readComicsCount() (int, error) {
 }
 
 func writeComicsCount(newCount int) error {
-	var data ComicsCountData
-
-	data = ComicsCountData{
+	data := ComicsCountData{
 		LastRequest: time.Now(),
 		Count:       newCount,
 	}

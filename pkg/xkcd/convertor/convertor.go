@@ -9,6 +9,7 @@ func FromXkcdClientToGlobal(comicsInfo xkcdClient.ComicInfo) *models.ComicInfoGl
 	return &models.ComicInfoGlobal{
 		Num:        comicsInfo.Num,
 		Transcript: comicsInfo.Transcript,
+		SafeTitle:  comicsInfo.SafeTitle,
 		Alt:        comicsInfo.Alt,
 		Img:        comicsInfo.Img,
 	}
