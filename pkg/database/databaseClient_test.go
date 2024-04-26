@@ -12,6 +12,7 @@ var queryWords = []globalModel.StemmedWord{
 
 func BenchmarkFindComicsByStringNotUsingIndex(b *testing.B) {
 	client, _ := NewDatabaseClient("../../database.json", "../../index.json")
+	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
 		_ = client.FindComicsByStringNotUsingIndex(queryWords)
@@ -21,6 +22,7 @@ func BenchmarkFindComicsByStringNotUsingIndex(b *testing.B) {
 
 func BenchmarkFindComicsByStringUsingIndex(b *testing.B) {
 	client, _ := NewDatabaseClient("../../database.json", "../../index.json")
+	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
 		_ = client.FindComicsByStringUsingIndex(queryWords)

@@ -1,0 +1,4 @@
+there should be calls to pkg packages
+
+and for all of them should be a new package (directory)
+naming should be line (repo here and postgres in the pkg)

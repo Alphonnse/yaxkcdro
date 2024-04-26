@@ -15,7 +15,7 @@ type App struct {
 func NewApp() (*App, error) {
 	a := &App{}
 
-	configPath := "config.yaml"
+	configPath := "config/config.yaml"
 	a.InitDeps(configPath)
 
 	return a, nil

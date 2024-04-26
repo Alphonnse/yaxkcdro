@@ -1,4 +1,0 @@
-resource_url: "https://xkcd.com"
-path_db: "database.json"
-path_index: "index.json"
-path_stopwords: "stopwords.txt"

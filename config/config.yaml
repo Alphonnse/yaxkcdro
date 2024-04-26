@@ -1,0 +1,4 @@
+resource_url: "https://xkcd.com"
+path_db: "config/database.json"
+path_index: "config/index.json"
+path_stopwords: "config/stopwords.txt"
