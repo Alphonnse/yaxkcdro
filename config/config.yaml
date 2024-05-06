@@ -1,3 +1,5 @@
+server_host: "127.0.0.1"
+server_port: "8080"
 resource_url: "https://xkcd.com"
 path_db: "config/database.json"
 path_index: "config/index.json"

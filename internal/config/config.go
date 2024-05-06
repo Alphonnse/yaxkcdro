@@ -1,12 +1,15 @@
 package config
 
 import (
+	"net"
 	"os"
 
 	"gopkg.in/yaml.v3"
 )
 
 type AppConfig struct {
+	ServerHost    string `yaml:"server_host"`
+	ServerPort    string `yaml:"server_port"`
 	ResourceURL   string `yaml:"resource_url"`
 	PathDB        string `yaml:"path_db"`
 	PathIndex     string `yaml:"path_index"`
@@ -26,6 +29,10 @@ func NewAppConfig(path string) (AppConfig, error) {
 	}
 
 	return config, nil
+}
+
+func (config AppConfig) ServerAddress() string {
+	return net.JoinHostPort(config.ServerHost, config.ServerPort)
 }
 
 func (config AppConfig) GetResourceURL() string {
